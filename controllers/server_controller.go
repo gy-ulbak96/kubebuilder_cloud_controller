@@ -27,6 +27,10 @@ import (
 	cloudcontrollerv1alpha1 "github.com/gy-ulbak96/kubebuilder_cloud_controller/api/v1alpha1"
 )
 
+const (
+	cloudUrl = "http://127.0.0.1:8080"
+)
+
 // ServerReconciler reconciles a Server object
 type ServerReconciler struct {
 	client.Client
@@ -69,11 +73,17 @@ func (r *ServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return nil
 	}
 
-	err = r.Client.Create(context.TODO(), dep)
-	if err != nil{
-		reqLogger.Error(err, "Failed to create new Server.")
-		return ctrl.Result{}, err
-	}
+	client, err := cloudclient.CreateClient(cloudurl)
+  {                                                                                                          
+      utilruntime.HandleError(fmt.Errorf("%+v", err.Error()))
+      return nil
+  }
+
+	// err = r.Client.Create(context.TODO(), dep)
+	// if err != nil{
+	// 	reqLogger.Error(err, "Failed to create new Server.")
+	// 	return ctrl.Result{}, err
+	// }
 
 	if server.Status.ServerId == "" {
 		deletionTimestamp := server.ObjectMeta.GetDeletionTimestamp()
@@ -81,16 +91,42 @@ func (r *ServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		if len(finalizer) > 0 && deletionTimestamp != nil {
 			serverId := server.Status.ServerId
-			_, errGetServer := r.Client.
+			_, errGetServer := client.GetServer(serverId)
+			if errGetServer != nil {
+                utilruntime.HandleError(fmt.Errorf("%+v", errGetServer.Error()))
+                return nil
+      }
+
+			errDeleteServer := deleteServer(serverId)
+            if errDeleteServer != nil {
+                utilruntime.HandleError(fmt.Errorf("%+v", errDeleteServer.Error()))
+                return nil
+            }
+            fmt.Println("Success to delete on " + serverName)
+						// Server  object에서 finalizer를 제거합니다. 기존 server object를 직접 수정하지 않고 DeepCopy를 통해 복사한 object를 수정한 뒤 업데이트합니다.
+
+            serverCopy := server.DeepCopy()
+            serverCopy.ObjectMeta.SetFinalizers([]string{})
+            _, errUpdate := cloudcontrollerv1alpha1.Servers(server.Namespace).Update(context.TODO(), serverCopy, metav1.UpdateOptions{})
+            if errUpdate != nil {
+                utilruntime.HandleError(fmt.Errorf("%+v", errUpdate.Error()))
+                return nil
+            }
+            fmt.Println("Success to remove a finalizer on " + serverName)
+            return nil
+        }
 		}
-	}
-
-
-	
-	
-
-	return ctrl.Result{}, nil
+			return ctrl.Result{}, nil
 }
+
+
+	
+	
+
+
+func deleteServer(){}
+
+func updateServerStatus(){}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
