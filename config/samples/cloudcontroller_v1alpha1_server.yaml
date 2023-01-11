@@ -1,0 +1,12 @@
+apiVersion: cloudcontroller.crd.example.com/v1alpha1
+kind: Server
+metadata:
+  labels:
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: server-sample
+    app.kubernetes.io/part-of: customresource
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: customresource
+  name: server-sample
+spec:
+  # TODO(user): Add fields here

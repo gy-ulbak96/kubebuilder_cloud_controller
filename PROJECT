@@ -1,0 +1,16 @@
+domain: crd.example.com
+layout:
+- go.kubebuilder.io/v3
+projectName: customresource
+repo: github.com/gy-ulbak96/kubebuilder_cloud_controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: crd.example.com
+  group: cloudcontroller
+  kind: Server
+  path: github.com/gy-ulbak96/kubebuilder_cloud_controller/api/v1alpha1
+  version: v1alpha1
+version: "3"
